@@ -50,7 +50,6 @@
   var HDRCL=S([99,111,110,116,101,110,116,45,108,101,110,103,116,104]);
   var HDRCT=S([99,111,110,116,101,110,116,45,116,121,112,101]);
   var MAXB=104857600;
-  var BADQ=[34,39,60,62];
 
   var child=null;
   var origOpen=window.open?window.open.bind(window):function(){return null;};
@@ -81,12 +80,6 @@
     }catch(e){return false;}
   }
 
-  function sanitizeSource(src){
-    if(!src||typeof src!==typeof S([0])) return null;
-    for(var i=0;i<BADQ.length;i++){if(src.indexOf(String.fromCharCode(BADQ[i]))>=0) return null;}
-    return src;
-  }
-
   function createViewer(win,src,label){
     if(!win||win.closed) return null;
     var doc=win.document;
@@ -114,7 +107,7 @@
       body.style.height=S([49,48,48,37]);
       body.style.overflow=S([104,105,100,100,101,110]);
       var frame=doc.createElement(S([105,102,114,97,109,101]));
-      frame.setAttribute(S([115,114,99]),src);
+      frame.src=src;
       frame.style.position=S([102,105,120,101,100]);
       frame.style.inset=S([48]);
       frame.style.border=S([48]);
@@ -143,7 +136,7 @@
       fbMsg.style.marginBottom=S([50]);
       fbMsg.appendChild(doc.createTextNode(S([76,101,32,118,105,115,117,97,108,105,115,97,116,105,111,110,32,100,117,32,80,68,70,32,101,115,116,32,98,108,111,113,117,195,169,101,46])));
       var fbLink=doc.createElement(S([97]));
-      fbLink.setAttribute(PRHV,src);
+      fbLink.href=src;
       fbLink.style.display=S([105,110,108,105,110,101,45,98,108,111,99,107]);
       fbLink.style.padding=S([49,50,32,50,52]);
       fbLink.style.background=S([35,48,48,55,50,70,70]);
@@ -208,24 +201,21 @@
   }
 
   async function renderPdfInChild(url,filename,win){
-    var safe=sanitizeSource(url);
     var label=filename&&typeof filename===typeof S([0])?filename:S([80,68,70]);
     if(!win) return;
-    if(!safe){showFallback(null,win,url);return;}
     if(url.slice(0,BLOB.length)===BLOB){
       var blob=await resolveBlob(url);
       if(!blob){showFallback(null,win,url);return;}
       var blobUrl=null;
       try{blobUrl=URL.createObjectURL(blob);}catch(e){}
-      var src=sanitizeSource(blobUrl||url);
-      if(!src){showFallback(null,win,url);return;}
+      var src=blobUrl||url;
       var view=createViewer(win,src,label);
       if(!view){showFallback(null,win,url);return;}
       monitorFrame(view,win,url);
       if(blobUrl) setTimeout(function(){try{URL.revokeObjectURL(blobUrl);}catch(e){}},5000);
       return;
     }
-    var view=createViewer(win,safe,label);
+    var view=createViewer(win,url,label);
     if(!view){showFallback(null,win,url);return;}
     monitorFrame(view,win,url);
   }
